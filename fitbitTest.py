@@ -8,8 +8,9 @@ import sys
 import os
 import base64
 
-# This is the Fitbit URL to use for the API call
-PROFILE_URL = "https://api.fitbit.com/1/user/-/profile.json"
+# my fitbit device id
+DEVICE_VERSION = 'Charge 2'
+deviceId = 'no id found'
 
 # Use this URL to refresh the access token
 TokenURL = "https://api.fitbit.com/oauth2/token"
@@ -135,10 +136,33 @@ def GetNewAccessToken(RefToken):
         sys.exit()
 
 
+def writeJsonStringToFile(jsonString, jsonFile):
+   if ok:
+      j = json.loads(jsonString)
+      with open(jsonFile, 'w') as outfile:
+          json.dump(j, outfile, indent=4)
+
+def getDevices():
+    URL = "https://api.fitbit.com/1/user/-/devices.json"
+    ok, out = MakeAPICall(
+        URL, AccessToken, RefreshToken)
+    return ok, out
+
+
+def getAlarms():
+    ALARMS_URL = "https://api.fitbit.com/1/user/-/devices/tracker/" + deviceId + "/alarms.json"
+    ok, out = MakeAPICall(
+        ALARMS_URL, AccessToken, RefreshToken)
+    return ok, out
+
+
 def getProfile():
-    APICallOK, APIResponse = MakeAPICall(
+    # This is the Fitbit URL to use for the API call
+    PROFILE_URL = "https://api.fitbit.com/1/user/-/profile.json"
+
+    ok, out = MakeAPICall(
         PROFILE_URL, AccessToken, RefreshToken)
-    return APICallOK, APIResponse
+    return ok, out
 
 
 # This makes an API call.  It also catches errors and tries to deal with them
@@ -166,6 +190,7 @@ def MakeAPICall(InURL, AccToken, RefToken):
     except urllib2.URLError as e:
         print "Got this HTTP error: " + str(e.code)
         HTTPErrorMessage = e.read()
+        writeJsonStringToFile(HTTPErrorMessage, "error.json")
         print "This was in the HTTP error message: " + HTTPErrorMessage
         print "e.code: " + str(e.code)
         # See what the error was
@@ -214,16 +239,22 @@ print "Fitbit API Test Code"
 AccessToken, RefreshToken = GetConfig()
 
 # Make the API call
-APICallOK, APIResponse = getProfile()
+ok, devices = getDevices()
+devicesJson = json.loads(devices)
+for device in devicesJson:
+   if device['deviceVersion'] == DEVICE_VERSION:
+      deviceId = device['id']
 
-if APICallOK:
-    j = json.loads(APIResponse)
-    with open('data.json', 'w') as outfile:
-        json.dump(j, outfile, indent=4)
-    getSleep()
+print "My device id: " + deviceId
+writeJsonStringToFile(devices, "devices.json")
 
-else:
-    if (APIResponse == TokenRefreshedOK):
+
+ok, alarms = getAlarms()
+
+writeJsonStringToFile(alarms, "alarms.json")
+
+if not ok:
+    if (devices == TokenRefreshedOK):
         print "Refreshed the access token.  Can go again"
     else:
         print ErrorInAPI
