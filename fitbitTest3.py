@@ -2,8 +2,8 @@
 import fitbit
 import datetime
 import json
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import sys
 import os
 import base64
@@ -38,7 +38,7 @@ ErrorInAPI = "Error when making API call that I couldn't handle"
 
 
 def GetConfig():
-    print "Reading from the config file"
+    print("Reading from the config file")
 
     # Open the file
     FileObj = open(IniFile, 'r')
@@ -61,8 +61,8 @@ def GetConfig():
 
 
 def WriteConfig(AccToken, RefToken):
-    print "Writing new token to the config file"
-    print "Writing this: " + AccToken + " and " + RefToken
+    print("Writing new token to the config file")
+    print("Writing this: " + AccToken + " and " + RefToken)
 
     # Delete the old config file
     os.remove(IniFile)
@@ -76,34 +76,34 @@ def WriteConfig(AccToken, RefToken):
 
 # Make a HTTP POST to get a new
 def GetNewAccessToken(RefToken):
-    print "Getting a new access token"
+    print("Getting a new access token")
 
     # Form the data payload
     BodyText = {'grant_type': 'refresh_token',
                 'refresh_token': RefToken}
     # URL Encode it
-    BodyURLEncoded = urllib.urlencode(BodyText)
-    print "Using this as the body when getting access token >>" + BodyURLEncoded
+    BodyURLEncoded = urllib.parse.urlencode(BodyText)
+    print("Using this as the body when getting access token >>" + BodyURLEncoded)
 
     # Start the request
-    tokenreq = urllib2.Request(TokenURL, BodyURLEncoded)
+    tokenreq = urllib.request.Request(TokenURL, BodyURLEncoded)
 
 # Make a HTTP POST to get a new
 
 
 def GetNewAccessToken(RefToken):
-    print "Getting a new access token"
+    print("Getting a new access token")
 
     # Form the data payload
     BodyText = {'grant_type': 'refresh_token',
                 'refresh_token': RefToken}
 
     # URL Encode it
-    BodyURLEncoded = urllib.urlencode(BodyText)
-    print "Using this as the body when getting access token >>" + BodyURLEncoded
+    BodyURLEncoded = urllib.parse.urlencode(BodyText)
+    print("Using this as the body when getting access token >>" + BodyURLEncoded)
 
     # Start the request
-    tokenreq = urllib2.Request(TokenURL, BodyURLEncoded)
+    tokenreq = urllib.request.Request(TokenURL, BodyURLEncoded)
 
     # Add the headers, first we base64 encode the client id and client secret with a : inbetween and create the authorisation header
     tokenreq.add_header('Authorization', 'Basic ' +
@@ -112,7 +112,7 @@ def GetNewAccessToken(RefToken):
 
     # Fire off the request
     try:
-        tokenresponse = urllib2.urlopen(tokenreq)
+        tokenresponse = urllib.request.urlopen(tokenreq)
 
     # See what we got back.  If it's this part of  the code it was OK
         FullResponse = tokenresponse.read()
@@ -126,13 +126,13 @@ def GetNewAccessToken(RefToken):
 
         # Write the access token to the ini file
         WriteConfig(NewAccessToken, NewRefreshToken)
-        print "New access token output >>> " + FullResponse
+        print("New access token output >>> " + FullResponse)
 
-    except urllib2.URLError as e:
+    except urllib.error.URLError as e:
         # Gettin to this part of the code means we got an error
-        print "An error was raised when getting the access token.  Need to stop here"
-        print e.code
-        print e.read()
+        print("An error was raised when getting the access token.  Need to stop here")
+        print(e.code)
+        print(e.read())
         sys.exit()
 
 
@@ -168,7 +168,7 @@ def getProfile():
 # This makes an API call.  It also catches errors and tries to deal with them
 def MakeAPICall(InURL, AccToken, RefToken):
     # Start the request
-    req = urllib2.Request(InURL)
+    req = urllib.request.Request(InURL)
 
     # Add the access token in the header
     req.add_header('Authorization', 'Bearer ' + AccToken)
@@ -178,7 +178,7 @@ def MakeAPICall(InURL, AccToken, RefToken):
     # Fire off the request
     try:
         # Do the request
-        response = urllib2.urlopen(req)
+        response = urllib.request.urlopen(req)
 
         # Read the response
         FullResponse = response.read()
@@ -187,15 +187,15 @@ def MakeAPICall(InURL, AccToken, RefToken):
         return True, FullResponse
 
     # Catch errors, e.g. A 401 error that signifies the need for a new access token
-    except urllib2.URLError as e:
-        print "Got this HTTP error: " + str(e.code)
+    except urllib.error.URLError as e:
+        print("Got this HTTP error: " + str(e.code))
         HTTPErrorMessage = e.read()
         writeJsonStringToFile(HTTPErrorMessage, "error.json")
-        print "This was in the HTTP error message: " + HTTPErrorMessage
-        print "e.code: " + str(e.code)
+        print("This was in the HTTP error message: " + HTTPErrorMessage)
+        print("e.code: " + str(e.code))
         # See what the error was
         if (e.code == 401) and (HTTPErrorMessage.find("expired_token") > 0):
-            print "Getting new access token"
+            print("Getting new access token")
             GetNewAccessToken(RefToken)
             return False, TokenRefreshedOK
 
@@ -221,9 +221,9 @@ def getSleep():
     f.write(json.dumps(sleep, indent=4, sort_keys=True))
     f.close()
     hours_sleep = sleep['summary']['totalMinutesAsleep'] / 60.0
-    print(sleep['summary']['stages']['wake'])
-    print(sleep['summary']['stages']['deep'])
-    print(sleep['summary']['stages']['light'])
+    print((sleep['summary']['stages']['wake']))
+    print((sleep['summary']['stages']['deep']))
+    print((sleep['summary']['stages']['light']))
     print(hours_sleep)
 
 
@@ -232,7 +232,7 @@ def getSleep():
 AccessToken = ""
 RefreshToken = ""
 
-print "Fitbit API Test Code"
+print("Fitbit API Test Code")
 # CreateTokensFile()
 
 # Get the config
@@ -245,7 +245,7 @@ for device in devicesJson:
    if device['deviceVersion'] == DEVICE_VERSION:
       deviceId = device['id']
 
-print "My device id: " + deviceId
+print("My device id: " + deviceId)
 writeJsonStringToFile(devices, "devices.json")
 
 
@@ -255,6 +255,6 @@ writeJsonStringToFile(alarms, "alarms.json")
 
 if not ok:
     if (devices == TokenRefreshedOK):
-        print "Refreshed the access token.  Can go again"
+        print("Refreshed the access token.  Can go again")
     else:
-        print ErrorInAPI
+        print(ErrorInAPI)
