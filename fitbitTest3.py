@@ -155,8 +155,7 @@ def getAlarms():
 
 def addAlarm(**kwargs):
     ALARMS_URL = "https://api.fitbit.com/1/user/-/devices/tracker/" + deviceId + "/alarms.json"
-#    ok, out = MakeAPICall(ALARMS_URL, AccessToken, RefreshToken, **kwargs)
-    ok, out = MakeAPICall(ALARMS_URL, AccessToken, RefreshToken)
+    ok, out = MakeAPICall(ALARMS_URL, AccessToken, RefreshToken, **kwargs)
     return ok, out
 
 
@@ -170,17 +169,22 @@ def getProfile():
 
 
 # This makes an API call.  It also catches errors and tries to deal with them
-#def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
-def MakeAPICall(InURL, AccToken, RefToken):
+def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
+#def MakeAPICall(InURL, AccToken, RefToken):
     # Start the request
-    req = urllib.request.Request(InURL)
+    if (kwargs):
+        my_data = urllib.parse.urlencode(kwargs)
+        print (my_data)
+        my_data = my_data.encode('utf-8')
+        print (my_data)
+        req = urllib.request.Request(InURL, my_data)
+    else:
+        print ('no kwargs')
+        req = urllib.request.Request(InURL)
+
 
     # Add the access token in the header
     req.add_header('Authorization', 'Bearer ' + AccToken)
-
-# add arguments
-#    for key, value in kwargs.items(): 
-#        req.add_header(key, value)
 
     try:
         response = urllib.request.urlopen(req)
