@@ -16,7 +16,7 @@ deviceId = 'no id found'
 TokenURL = "https://api.fitbit.com/oauth2/token"
 
 # Get and write the tokens from here
-IniFile = "tokens.txt"
+IniFile = "tokens"
 
 # From the developer site
 CLIENT_ID = '22D7JS'
@@ -89,8 +89,6 @@ def GetNewAccessToken(RefToken):
     tokenreq = urllib.request.Request(TokenURL, BodyURLEncoded)
 
 # Make a HTTP POST to get a new
-
-
 def GetNewAccessToken(RefToken):
     print("Getting a new access token")
 
@@ -137,10 +135,9 @@ def GetNewAccessToken(RefToken):
 
 
 def writeJsonStringToFile(jsonString, jsonFile):
-   if ok:
-      j = json.loads(jsonString)
-      with open(jsonFile, 'w') as outfile:
-          json.dump(j, outfile, indent=4)
+    j = json.loads(jsonString)
+    with open(jsonFile, 'w') as outfile:
+        json.dump(j, outfile, indent=4)
 
 def getDevices():
     URL = "https://api.fitbit.com/1/user/-/devices.json"
@@ -156,6 +153,13 @@ def getAlarms():
     return ok, out
 
 
+def addAlarm(**kwargs):
+    ALARMS_URL = "https://api.fitbit.com/1/user/-/devices/tracker/" + deviceId + "/alarms.json"
+    ok, out = MakeAPICall(
+        ALARMS_URL, AccessToken, RefreshToken, **kwargs)
+    return ok, out
+
+
 def getProfile():
     # This is the Fitbit URL to use for the API call
     PROFILE_URL = "https://api.fitbit.com/1/user/-/profile.json"
@@ -166,6 +170,7 @@ def getProfile():
 
 
 # This makes an API call.  It also catches errors and tries to deal with them
+#def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
 def MakeAPICall(InURL, AccToken, RefToken):
     # Start the request
     req = urllib.request.Request(InURL)
@@ -173,17 +178,13 @@ def MakeAPICall(InURL, AccToken, RefToken):
     # Add the access token in the header
     req.add_header('Authorization', 'Bearer ' + AccToken)
 
-# print "I used this access token " + AccToken
+# add arguments
+#    for key, value in kwargs.items(): 
+#        req.add_header(key, value)
 
-    # Fire off the request
     try:
-        # Do the request
         response = urllib.request.urlopen(req)
-
-        # Read the response
         FullResponse = response.read()
-
-        # Return values
         return True, FullResponse
 
     # Catch errors, e.g. A 401 error that signifies the need for a new access token
@@ -240,21 +241,24 @@ AccessToken, RefreshToken = GetConfig()
 
 # Make the API call
 ok, devices = getDevices()
-devicesJson = json.loads(devices)
-for device in devicesJson:
-   if device['deviceVersion'] == DEVICE_VERSION:
-      deviceId = device['id']
-
-print("My device id: " + deviceId)
-writeJsonStringToFile(devices, "devices.json")
-
-
-ok, alarms = getAlarms()
-
-writeJsonStringToFile(alarms, "alarms.json")
-
-if not ok:
-    if (devices == TokenRefreshedOK):
-        print("Refreshed the access token.  Can go again")
-    else:
-        print(ErrorInAPI)
+#devicesJson = json.loads(devices)
+#for device in devicesJson:
+#   if device['deviceVersion'] == DEVICE_VERSION:
+#      deviceId = device['id']
+#
+#print("My device id: " + deviceId)
+#writeJsonStringToFile(devices, "devices.json")
+#
+#ok, alarms = getAlarms()
+#writeJsonStringToFile(alarms, "alarms.json")
+#
+#ok, setAlarmsResponse = addAlarm(time = '07:15-08:00', enabled = 'true', recurring = 'false', weekDays = 'SATURDAY,SUNDAY')
+#
+#ok, alarms = getAlarms()
+#writeJsonStringToFile(alarms, "alarmsNew.json")
+#
+#if not ok:
+#    if (devices == TokenRefreshedOK):
+#        print("Refreshed the access token.  Can go again")
+#    else:
+#        print(ErrorInAPI)
