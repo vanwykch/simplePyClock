@@ -155,8 +155,7 @@ def getAlarms():
 
 def addAlarm(**kwargs):
     ALARMS_URL = "https://api.fitbit.com/1/user/-/devices/tracker/" + deviceId + "/alarms.json"
-    ok, out = MakeAPICall(
-        ALARMS_URL, AccessToken, RefreshToken, **kwargs)
+    ok, out = MakeAPICall(ALARMS_URL, AccessToken, RefreshToken, **kwargs)
     return ok, out
 
 
@@ -170,22 +169,28 @@ def getProfile():
 
 
 # This makes an API call.  It also catches errors and tries to deal with them
-#def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
-def MakeAPICall(InURL, AccToken, RefToken):
+def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
+#def MakeAPICall(InURL, AccToken, RefToken):
     # Start the request
-    req = urllib.request.Request(InURL)
+    if (kwargs):
+        my_data = urllib.parse.urlencode(kwargs)
+        print (my_data)
+        my_data = my_data.encode('utf-8')
+        print (my_data)
+        req = urllib.request.Request(InURL, my_data)
+    else:
+        print ('no kwargs')
+        req = urllib.request.Request(InURL)
+
 
     # Add the access token in the header
     req.add_header('Authorization', 'Bearer ' + AccToken)
 
-# add arguments
-#    for key, value in kwargs.items(): 
-#        req.add_header(key, value)
-
     try:
         response = urllib.request.urlopen(req)
         FullResponse = response.read()
-        return True, FullResponse
+        out = FullResponse.decode("utf-8")
+        return True, out
 
     # Catch errors, e.g. A 401 error that signifies the need for a new access token
     except urllib.error.URLError as e:
@@ -241,24 +246,24 @@ AccessToken, RefreshToken = GetConfig()
 
 # Make the API call
 ok, devices = getDevices()
-#devicesJson = json.loads(devices)
-#for device in devicesJson:
-#   if device['deviceVersion'] == DEVICE_VERSION:
-#      deviceId = device['id']
-#
-#print("My device id: " + deviceId)
-#writeJsonStringToFile(devices, "devices.json")
-#
-#ok, alarms = getAlarms()
-#writeJsonStringToFile(alarms, "alarms.json")
-#
-#ok, setAlarmsResponse = addAlarm(time = '07:15-08:00', enabled = 'true', recurring = 'false', weekDays = 'SATURDAY,SUNDAY')
-#
-#ok, alarms = getAlarms()
-#writeJsonStringToFile(alarms, "alarmsNew.json")
-#
-#if not ok:
-#    if (devices == TokenRefreshedOK):
-#        print("Refreshed the access token.  Can go again")
-#    else:
-#        print(ErrorInAPI)
+devicesJson = json.loads(devices)
+for device in devicesJson:
+   if device['deviceVersion'] == DEVICE_VERSION:
+      deviceId = device['id']
+
+print("My device id: " + deviceId)
+writeJsonStringToFile(devices, "devices.json")
+
+ok, alarms = getAlarms()
+writeJsonStringToFile(alarms, "alarms.json")
+
+ok, setAlarmsResponse = addAlarm(time = '07:15-08:00', enabled = 'true', recurring = 'false', weekDays = 'SATURDAY,SUNDAY')
+
+ok, alarms = getAlarms()
+writeJsonStringToFile(alarms, "alarmsNew.json")
+
+if not ok:
+    if (devices == TokenRefreshedOK):
+        print("Refreshed the access token.  Can go again")
+    else:
+        print(ErrorInAPI)
