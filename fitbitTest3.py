@@ -81,20 +81,6 @@ def GetNewAccessToken(RefToken):
     # Form the data payload
     BodyText = {'grant_type': 'refresh_token',
                 'refresh_token': RefToken}
-    # URL Encode it
-    BodyURLEncoded = urllib.parse.urlencode(BodyText)
-    print("Using this as the body when getting access token >>" + BodyURLEncoded)
-
-    # Start the request
-    tokenreq = urllib.request.Request(TokenURL, BodyURLEncoded)
-
-# Make a HTTP POST to get a new
-def GetNewAccessToken(RefToken):
-    print("Getting a new access token")
-
-    # Form the data payload
-    BodyText = {'grant_type': 'refresh_token',
-                'refresh_token': RefToken}
 
     # URL Encode it
     BodyURLEncoded = urllib.parse.urlencode(BodyText)
@@ -257,7 +243,7 @@ writeJsonStringToFile(devices, "devices.json")
 ok, alarms = getAlarms()
 writeJsonStringToFile(alarms, "alarms.json")
 
-ok, setAlarmsResponse = addAlarm(time = '07:15-08:00', enabled = 'true', recurring = 'false', weekDays = 'SATURDAY,SUNDAY')
+#ok, setAlarmsResponse = addAlarm(time = '07:15-08:00', enabled = 'true', recurring = 'false', weekDays = 'SATURDAY')
 
 ok, alarms = getAlarms()
 writeJsonStringToFile(alarms, "alarmsNew.json")
