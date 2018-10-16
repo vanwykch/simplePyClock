@@ -145,6 +145,12 @@ def addAlarm(**kwargs):
     return ok, out
 
 
+def updateAlarm(alarmId, **kwargs):
+    ALARMS_URL = "https://api.fitbit.com/1/user/-/devices/tracker/" + deviceId + "/alarms/" + alarmId + ".json"
+    ok, out = MakeAPICall(ALARMS_URL, AccessToken, RefreshToken, **kwargs)
+    return ok, out
+
+
 def getProfile():
     # This is the Fitbit URL to use for the API call
     PROFILE_URL = "https://api.fitbit.com/1/user/-/profile.json"
@@ -155,7 +161,8 @@ def getProfile():
 
 
 # This makes an API call.  It also catches errors and tries to deal with them
-def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
+def MakeAPICall(InURL, AccToken, RefToken, add_header = True, **kwargs):
+    print (InURL)
 #def MakeAPICall(InURL, AccToken, RefToken):
     # Start the request
     if (kwargs):
@@ -165,12 +172,12 @@ def MakeAPICall(InURL, AccToken, RefToken, **kwargs):
         print (my_data)
         req = urllib.request.Request(InURL, my_data)
     else:
-        print ('no kwargs')
         req = urllib.request.Request(InURL)
 
 
     # Add the access token in the header
-    req.add_header('Authorization', 'Bearer ' + AccToken)
+    if add_header:
+        req.add_header('Authorization', 'Bearer ' + AccToken)
 
     try:
         response = urllib.request.urlopen(req)
@@ -244,6 +251,8 @@ ok, alarms = getAlarms()
 writeJsonStringToFile(alarms, "alarms.json")
 
 #ok, setAlarmsResponse = addAlarm(time = '07:15-08:00', enabled = 'true', recurring = 'false', weekDays = 'SATURDAY')
+ok, setAlarmsResponse = updateAlarm('508650326', time = '07:15-08:00', enabled = 'false', recurring = 'false', weekDays = 'SATURDAY', snoozeLength = 5, snoozeCount = 10)
+writeJsonStringToFile(alarms, "updateAlarm.json")
 
 ok, alarms = getAlarms()
 writeJsonStringToFile(alarms, "alarmsNew.json")
