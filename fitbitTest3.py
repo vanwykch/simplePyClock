@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+import datetime
 import json
 import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
@@ -22,13 +23,13 @@ CLIENT_SECRET = '88602d8c5d5872b3905c4828cce68333'
 redirect_uri = 'http://127.0.0.1:8080/'
 
 
-class MyDate:
+class ctv_date:
     year = '2018'
     month = '10'
     day = '06'
 
 
-# Some constants defining API error handling responses
+# Some contants defining API error handling responses
 TokenRefreshedOK = "Token refreshed OK"
 ErrorInAPI = "Error when making API call that I couldn't handle"
 
@@ -66,70 +67,77 @@ def WriteConfig(AccToken, RefToken):
     os.remove(IniFile)
 
     # Open and write to the file
-    file_obj = open(IniFile, 'w')
-    file_obj.write(AccToken + "\n")
-    file_obj.write(RefToken + "\n")
-    file_obj.close()
+    FileObj = open(IniFile, 'w')
+    FileObj.write(AccToken + "\n")
+    FileObj.write(RefToken + "\n")
+    FileObj.close()
 
 
-def get_new_access_token(token):
+# Make a HTTP POST to get a new
+def GetNewAccessToken(RefToken):
     print("Getting a new access token")
 
     # Form the data payload
-    body_text = {'grant_type': 'refresh_token', 'refresh_token': token}
+    BodyText = {'grant_type': 'refresh_token',
+                'refresh_token': RefToken}
 
     # URL Encode it
-    body_encoded = urllib.parse.urlencode(body_text)
-    print("Using this as the body when getting access token >>" + body_encoded)
+    BodyURLEncoded = urllib.parse.urlencode(BodyText)
+    print("Using this as the body when getting access token >>" + BodyURLEncoded)
 
     # Start the request
-    token_request_response = urllib.request.Request(TokenURL, body_encoded)
+    tokenreq = urllib.request.Request(TokenURL, BodyURLEncoded)
 
-    # Add the headers, first we base64 encode the client id and client secret with a ":"
-    #  in between and create the authorisation header
-    token_request_response.add_header('Authorization', 'Basic ' + base64.b64encode(CLIENT_ID + ":" + CLIENT_SECRET))
-    token_request_response.add_header('Content-Type', 'application/x-www-form-urlencoded')
+    # Add the headers, first we base64 encode the client id and client secret with
+    # a : in between and create the authorisation header
+    tokenreq.add_header('Authorization', 'Basic ' + base64.b64encode(CLIENT_ID + ":" + CLIENT_SECRET))
+    tokenreq.add_header('Content-Type', 'application/x-www-form-urlencoded')
 
     # Fire off the request
     try:
-        token_response = urllib.request.urlopen(token_request_response)
+        tokenresponse = urllib.request.urlopen(tokenreq)
 
     # See what we got back.  If it's this part of  the code it was OK
-        full_response = token_response.read()
+        FullResponse = tokenresponse.read()
 
     # Need to pick out the access token and write it to the config file.  Use a JSON manipluation module
-        response_json = json.loads(full_response)
+        ResponseJSON = json.loads(FullResponse)
 
     # Read the access token as a string
-        new_access_token = str(response_json['access_token'])
-        new_refresh_token = str(response_json['refresh_token'])
+        NewAccessToken = str(ResponseJSON['access_token'])
+        NewRefreshToken = str(ResponseJSON['refresh_token'])
 
         # Write the access token to the ini file
-        WriteConfig(new_access_token, new_refresh_token)
-        print("New access token output >>> " + full_response)
+        WriteConfig(NewAccessToken, NewRefreshToken)
+        print("New access token output >>> " + FullResponse)
 
     except urllib.error.URLError as e:
+        # Gettin to this part of the code means we got an error
         print("An error was raised when getting the access token.  Need to stop here")
-        print(e.reason)
+        print(e.code)
+        print(e.read())
         sys.exit()
 
 
 def writeJsonStringToFile(jsonString, jsonFile):
-    j = json.loads(jsonString)
-    with open(jsonFile, 'w') as outfile:
-        json.dump(j, outfile, indent=4)
+    try:
+        j = json.loads(str(jsonString))
+        with open(jsonFile, 'w') as outfile:
+            json.dump(j, outfile, indent=4)
+    except Exception as e:
+        print(e)
 
 
 def getDevices():
     URL = "https://api.fitbit.com/1/user/-/devices.json"
-    ok, out = makeAPICall(
+    ok, out = MakeAPICall(
         URL, AccessToken, RefreshToken)
     return ok, out
 
 
 def getAlarms():
     ALARMS_URL = "https://api.fitbit.com/1/user/-/devices/tracker/" + deviceId + "/alarms.json"
-    ok, out = makeAPICall(
+    ok, out = MakeAPICall(
         ALARMS_URL, AccessToken, RefreshToken)
     return ok, out
 
@@ -148,14 +156,14 @@ def updateAlarm(alarmId, **kwargs):
 
 def getProfile():
     # This is the Fitbit URL to use for the API call
-    profile_url = "https://api.fitbit.com/1/user/-/profile.json"
+    PROFILE_URL = "https://api.fitbit.com/1/user/-/profile.json"
 
-    ok, out = makeAPICall(profile_url, AccessToken, RefreshToken)
+    ok, out = MakeAPICall(
+        PROFILE_URL, AccessToken, RefreshToken)
     return ok, out
 
 
 # This makes an API call.  It also catches errors and tries to deal with them
-
 def MakeAPICall(InURL, AccToken, RefToken, add_header = True, **kwargs):
     print (InURL)
 #def MakeAPICall(InURL, AccToken, RefToken):
@@ -184,17 +192,18 @@ def MakeAPICall(InURL, AccToken, RefToken, add_header = True, **kwargs):
     except urllib.error.URLError as e:
         print("Got this HTTP error: " + str(e.code))
         http_error_message = str(e.read())
+        # writeJsonStringToFile(http_error_message, "error.json")
+        # print("This was in the HTTP error message: " + http_error_message)
         if (e.code == 401) and (http_error_message.find("expired_token") > 0):
-            get_new_access_token(RefToken)
+            print("Getting new access token")
+            GetNewAccessToken(RefToken)
             return False, TokenRefreshedOK
 
-        print("This was in the HTTP error message: " + http_error_message)
-        writeJsonStringToFile(http_error_message, "error.json")
         # Return that this didn't work, allowing the calling function to handle it
         return False, ErrorInAPI
 
 
-def create_tokens_file():
+def CreateTokensFile():
 
     NewAccessToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1WDZHQkgiLCJhdWQiOiIyMkQ3SlMiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJ3aHIgd3BybyB3bnV0IHdzbGUgd3dlaSB3c29jIHdzZXQgd2FjdCB3bG9jIiwiZXhwIjoxNTM4ODg3MzY5LCJpYXQiOjE1Mzg4NTg1Njl9.H-WRCuJvAwX_bgl3NaOYXM35mKkoQBhzF7C1zMtYq_I'
     NewRefreshToken = 'c71772ff8c2e7f1d34cf5bd21474aaaba91b5c359257b1b978428c75560bd06a'
@@ -203,6 +212,8 @@ def create_tokens_file():
 
 # Main part of the code
 # Declare these global variables that we'll use for the access and refresh tokens
+AccessToken = ""
+RefreshToken = ""
 
 print("Fitbit API Test Code")
 # CreateTokensFile()
@@ -214,8 +225,8 @@ AccessToken, RefreshToken = GetConfig()
 ok, devices = getDevices()
 devicesJson = json.loads(devices)
 for device in devicesJson:
-   if device['deviceVersion'] == DEVICE_VERSION:
-      deviceId = device['id']
+    if device['deviceVersion'] == DEVICE_VERSION:
+        deviceId = device['id']
 
 print("My device id: " + deviceId)
 writeJsonStringToFile(devices, "devices.json")
