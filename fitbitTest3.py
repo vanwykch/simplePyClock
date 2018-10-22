@@ -17,8 +17,8 @@ TokenURL = "https://api.fitbit.com/oauth2/token"
 IniFile = "tokens"
 
 # From the developer site
-CLIENT_ID = '22D7JS'
-CLIENT_SECRET = '88602d8c5d5872b3905c4828cce68333'
+CLIENT_ID = ''
+CLIENT_SECRET = ''
 redirect_uri = 'http://127.0.0.1:8080/'
 
 
@@ -32,9 +32,19 @@ class ctv_date:
 TokenRefreshedOK = "Token refreshed OK"
 ErrorInAPI = "Error when making API call that I couldn't handle"
 
+def get_client_and_secret():
+    with open('cred.json') as file:
+        data = json.load(file)
+
+    print('client: ' + data['client'])
+    print('secret: ' + data['secret'])
+    CLIENT_ID = data['client']
+    CLIENT_SECRET = data['secret']
+
+        
+
+
 # Get the config from the config file.  This is the access and refresh tokens
-
-
 def GetConfig():
     print("Reading from the config file")
 
@@ -217,6 +227,8 @@ RefreshToken = ""
 
 print("Fitbit API Test Code")
 # CreateTokensFile()
+
+get_client_and_secret()
 
 # Get the config
 AccessToken, RefreshToken = GetConfig()
