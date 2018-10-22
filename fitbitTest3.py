@@ -190,9 +190,10 @@ def MakeAPICall(InURL, AccToken, RefToken, add_header = True, **kwargs):
     # Catch errors, e.g. A 401 error that signifies the need for a new access token
     except urllib.error.URLError as e:
         print("Got this HTTP error: " + str(e.code))
-        http_error_message = str(e.read())
-        # writeJsonStringToFile(http_error_message, "error.json")
-        # print("This was in the HTTP error message: " + http_error_message)
+        http_error_message = e.read()
+        http_error_message.decode("utf-8")
+        writeJsonStringToFile(http_error_message, "error.json")
+        print("This was in the HTTP error message: " + http_error_message)
         if (e.code == 401) and (http_error_message.find("expired_token") > 0):
             print("Getting new access token")
             GetNewAccessToken(RefToken)
